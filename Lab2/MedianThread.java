@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 public class MedianThread {
 	private static final int DATA_SIZE = 1048576;
 	public static void main(String[] args) throws InterruptedException, FileNotFoundException  {
+		
 		// TODO: read data from external file and store it in an array
 	       // Note: you should pass the file as a first command line argument at runtime.
 
@@ -77,12 +78,9 @@ public class MedianThread {
 		for (int j=0; j<arrayOfSubList.size(); j+=2){
 			ArrayList<Integer> mergedSortedArray = new ArrayList<Integer>(arrayOfSubList.get(j));
 			mergedSortedArray.addAll(arrayOfSubList.get(j+1));
-			System.out.println("merged size is " + mergedSortedArray.size());
-			System.out.println("j is "+j);
 			arrayOfThread.add(new MedianMultiThread(mergedSortedArray));
 		}
-
-		System.out.println("Number of threads: " + arrayOfThread.size());
+		//clear the array of sublists so you can store the new sublists later
 		arrayOfSubList.clear();
 		//run all threads
 		for (MedianMultiThread thread : arrayOfThread){
@@ -101,17 +99,15 @@ public class MedianThread {
 	
 
 	//TODO: get median from sortedFullArray
-	
+	ArrayList<Integer> finalSortedArray = new ArrayList<Integer>(arrayOfSubList.get(0));
+	double median = computeMedian(finalSortedArray);
 	    //e.g, computeMedian(sortedFullArray
-	int finalArraySize = arrayOfSubList.get(0).size();
-	System.out.println("final merged size is " + finalArraySize);
-	double median = computeMedian(arrayOfSubList.get(0));
 
 	// TODO: stop recording time and compute the elapsed time 
 	long endTime = System.currentTimeMillis();
 	long runningTime = endTime-startTime;
 	// TODO: printout the final sorted array
-	
+	System.out.println(finalSortedArray);
 	// TODO: printout median
 	System.out.println("The Median value is "+median);
 	System.out.println("Running time is " + runningTime + " milliseconds\n");	
@@ -120,8 +116,6 @@ public class MedianThread {
 	public static double computeMedian(ArrayList<Integer> inputArray) {
 		int inputArraySize = inputArray.size();
 		if (inputArraySize%2==0){
-			//System.out.println("middle is "+inputArray.get(inputArraySize/2));
-			//System.out.println("another middle is "+inputArray.get(inputArraySize/2+1));
 			return (inputArray.get(inputArraySize/2)+inputArray.get(inputArraySize/2+1))/2;
 		}
 		else{
