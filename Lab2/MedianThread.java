@@ -27,6 +27,9 @@ public class MedianThread {
 		}catch(Exception e) {
 			e.getStackTrace();
 		}
+
+		//Collections.sort(integerArray);
+		//System.out.println("original median of list is "+computeMedian(integerArray));
 	
 	// define number of threads
 	int NumOfThread = Integer.valueOf(args[1]);// this way, you can pass number of threads as 	
@@ -36,8 +39,6 @@ public class MedianThread {
 	int subArrayListLength = DATA_SIZE/NumOfThread;
 	ArrayList<ArrayList<Integer>> arrayOfSubList = new ArrayList<ArrayList<Integer>>();
 	ArrayList<MedianMultiThread> arrayOfThread = new ArrayList<MedianMultiThread>();
-	ArrayList<MedianMultiThread> arrayOfMergeThread = new ArrayList<MedianMultiThread>();
-
 	int loopsToMerge = (int) (Math.log(NumOfThread)/Math.log(2));
 
 	for (int i=0; i<DATA_SIZE; i+=subArrayListLength){
@@ -54,7 +55,7 @@ public class MedianThread {
 			arrayOfThread.add(new MedianMultiThread(sublist));
 	}
 	//Tip: you can't create big number of threads in the above way. So, create an array list of threads. 
-	
+	arrayOfSubList.clear();
 	// TODO: start each thread to execute your sorting algorithm defined under the run() method, for example, 
 	for (MedianMultiThread thread : arrayOfThread){
 			thread.start();
@@ -63,6 +64,7 @@ public class MedianThread {
 	for (MedianMultiThread thread : arrayOfThread){
 		try{
 			thread.join();
+			arrayOfSubList.add(thread.getInternal());
 		} catch (Exception e){
 			e.getStackTrace();
 		}
@@ -71,42 +73,39 @@ public class MedianThread {
 	// TODO: use any merge algorithm to merge the sorted subarrays and store it to another array, e.g., sortedFullArray. 
 	for (int i=0;i<loopsToMerge;i++){
 		//instantiate array of threads to sort the merged lists
-		for (int j=0; j<arrayOfThread.size(); j++){
-			ArrayList<Integer> mergedSortedArray = new ArrayList<Integer>();
-			mergedSortedArray.addAll(arrayOfThread.get(j).getInternal());
-			mergedSortedArray.addAll(arrayOfThread.get(j++).getInternal());
+		arrayOfThread.clear();
+		for (int j=0; j<arrayOfSubList.size(); j+=2){
+			ArrayList<Integer> mergedSortedArray = new ArrayList<Integer>(arrayOfSubList.get(j));
+			mergedSortedArray.addAll(arrayOfSubList.get(j+1));
 			System.out.println("merged size is " + mergedSortedArray.size());
 			System.out.println("j is "+j);
-			arrayOfMergeThread.add(new MedianMultiThread(mergedSortedArray));
+			arrayOfThread.add(new MedianMultiThread(mergedSortedArray));
 		}
-		System.out.println(arrayOfMergeThread.size());
+
+		System.out.println("Number of threads: " + arrayOfThread.size());
+		arrayOfSubList.clear();
 		//run all threads
-		for (MedianMultiThread thread : arrayOfMergeThread){
+		for (MedianMultiThread thread : arrayOfThread){
 			thread.start();
 		}
 		//joing all threads
-		for (MedianMultiThread thread : arrayOfMergeThread){
+		for (MedianMultiThread thread : arrayOfThread){
 			try{
 				thread.join();
+				arrayOfSubList.add(thread.getInternal());
 			} catch (Exception e){
 				e.getStackTrace();
 			}
 		}
-
-		//redo the arraylists 	
-		arrayOfThread = new ArrayList<MedianMultiThread>(arrayOfMergeThread);
-		arrayOfMergeThread.clear();
-		System.out.println(i);
 	}
 	
 
 	//TODO: get median from sortedFullArray
 	
 	    //e.g, computeMedian(sortedFullArray
-
-	int finalArraySize = arrayOfThread.get(0).getInternal().size();
+	int finalArraySize = arrayOfSubList.get(0).size();
 	System.out.println("final merged size is " + finalArraySize);
-	double median = computeMedian(arrayOfThread.get(0).getInternal());
+	double median = computeMedian(arrayOfSubList.get(0));
 
 	// TODO: stop recording time and compute the elapsed time 
 	long endTime = System.currentTimeMillis();
@@ -115,26 +114,21 @@ public class MedianThread {
 	
 	// TODO: printout median
 	System.out.println("The Median value is "+median);
-	System.out.println("Running time is " + runningTime + " milliseconds\n");
-
-
-	Collections.sort(arrayOfThread.get(0).getInternal());
-	double newMedian = computeMedian(arrayOfThread.get(0).getInternal());
-	System.out.println("new median is "+newMedian);
-	
+	System.out.println("Running time is " + runningTime + " milliseconds\n");	
 	}
 
 	public static double computeMedian(ArrayList<Integer> inputArray) {
 		int inputArraySize = inputArray.size();
 		if (inputArraySize%2==0){
-			System.out.println("middle is "+inputArray.get(inputArraySize/2));
-			System.out.println("another middle is "+inputArray.get(inputArraySize/2+1));
+			//System.out.println("middle is "+inputArray.get(inputArraySize/2));
+			//System.out.println("another middle is "+inputArray.get(inputArraySize/2+1));
 			return (inputArray.get(inputArraySize/2)+inputArray.get(inputArraySize/2+1))/2;
 		}
 		else{
 			System.out.println(inputArray.get(inputArraySize/2+1));
 			return (inputArray.get(inputArraySize/2+1));
 		}
+		
 	}
 }
 
