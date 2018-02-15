@@ -77,7 +77,7 @@ public class MeanThread {
 		
 		// TODO: stop recording time and compute the elapsed time 
 		long endTime = System.currentTimeMillis();
-		System.out.println("Total execution time: "+(endTime-startTime));
+		System.out.println("Total execution time: "+(endTime-startTime)+" milliseconds.");
 		System.out.println("The global mean value is "+globalmean);
 		
 	}
