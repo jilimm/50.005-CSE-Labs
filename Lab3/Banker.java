@@ -21,9 +21,7 @@ public class Banker {
 	 */
 	public Banker (int[] resources, int numberOfCustomers) {
 		// TODO: set the number of resources
-		for (int i : resources){
-			this.numberOfResources+=i;
-		}
+		this.numberOfResources=resources.length;
 		// TODO: set the number of customers
 		this.numberOfCustomers = numberOfCustomers;
 		// TODO: set the value of bank resources to available
@@ -120,16 +118,17 @@ public class Banker {
 			}
 		}
 		// TODO: check if the state is safe or not
-		
-		// TODO: if it is safe, allocate the resources to customer customerNumber
-		for (int i=0; i<request.length;i++){
-			allocation[customerIndex][i]+=request[i];
-			//update need
-			need[customerIndex][i]-=request[i];
-			//update available
-			available[i]-=request[i];
+		boolean checkSafestate = checkSafe(customerIndex,request);
+		if (checkSafestate){
+			// TODO: if it is safe, allocate the resources to customer customerNumber
+			for (int i=0; i<request.length;i++){
+				allocation[customerIndex][i]+=request[i];
+				//update need
+				need[customerIndex][i]-=request[i];
+				//update available
+				available[i]-=request[i];
+			}
 		}
-
 		return true;
 	}
 
@@ -162,8 +161,49 @@ public class Banker {
 	 */
 	private synchronized boolean checkSafe(int customerIndex, int[] request) {
 		// TODO: check if the state is safe
-		
-		return true;
+		int [] temp_avail = new int[request.length];
+
+
+		for (int i=0; i<request.length;i++){
+			temp_avail[i] = available[i]-request[i];
+		}
+		//initialise temp need and temp alloc
+		int [][] temp_need = new int[numberOfCustomers][];
+		int [][] temp_alloc = new int[numberOfCustomers][];
+		for (int i=0; i<numberOfCustomers;i++){
+			temp_need[i] = Arrays.copyOf(need[i],request.length);
+			temp_alloc[i] = Arrays.copyOf(allocation[i],request.length);
+		}
+		//update need
+		for (int i=0; i<request.length;i++){
+			temp_need[customerIndex][i] = need[customerIndex][i]-request[i];
+			temp_alloc[customerIndex][i] = allocation[customerIndex][i] + request[i];
+		}
+		int [] work = Arrays.copyOf(temp_avail, temp_avail.length);
+		boolean[] finish = new boolean[numberOfCustomers];
+		Arrays.fill(finish, false);
+		boolean possible = true;
+		while (possible){
+			possible = false;
+			for (int c=0; c<numberOfCustomers;c++){
+				boolean temp_needLessThanWork = true;
+				for (int k=0; k<request.length; k++){
+					if (temp_need[c][k]>work[k]){
+						temp_needLessThanWork=false;
+					}
+				}
+				if (finish[c]==false && temp_needLessThanWork){
+					possible = true;
+					for (int a=0; a<request.length; a++){
+						work[a]+=temp_alloc[c][a];
+					}
+					finish[c] = true;
+				}
+			}
+		}
+		boolean[] finsihAllTrue = new boolean[numberOfCustomers];
+		Arrays.fill(finsihAllTrue,true);
+		return (Arrays.equals(finish,finsihAllTrue));
 	}
 
 	/**
