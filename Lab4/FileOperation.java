@@ -91,6 +91,19 @@ public class FileOperation {
 					System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+new Date(file.lastModified()));
 				}
 			}
+			else if (command.size()==2&&command.get(0).equalsIgnoreCase("find")){
+				String substring = command.get(1);
+				File[] fileList = currentDirectory.listFiles();
+				//******check sub directories for file**********//
+				//*****recursive????****//
+				for (File file : fileList){
+					String filePath = file.getAbsolutePath();
+					if (filePath.toLowerCase().contains(substring.toLowerCase())&&!file.isDirectory()){
+						System.out.println(filePath);
+					}
+
+				}
+			}
 			else{
 				System.out.println("test");
 
@@ -205,7 +218,7 @@ public class FileOperation {
 	 */
 	public static boolean Java_find(File dir, String name) {
 		boolean flag = false;
-		// TODO: find files
+		
 		return flag;
 	}
 
