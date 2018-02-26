@@ -11,9 +11,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.lang.NumberFormatException;
 
 public class FileOperation {
 	private static File currentDirectory = new File(System.getProperty("user.dir"));
+	private static ArrayList<File> fileFoundList;
 	public static void main(String[] args) throws java.io.IOException {
 
 		String commandLine;
@@ -47,65 +49,62 @@ public class FileOperation {
 
 			// TODO: implement code to handle create here
 			if (command.size()==2&&command.get(0).equalsIgnoreCase("create")){
-				String fileName =  command.get(1);
-				File file = new File(currentDirectory, fileName);
-				file.createNewFile();
-
-				//TODO: u best delete this shit	
-				System.out.println("created");	
+				Java_create(currentDirectory, command.get(1));
 			}
 			else if (command.size()==2&&command.get(0).equalsIgnoreCase("delete")){
-				String fileName =  command.get(1);
-				File file = new File(currentDirectory, fileName);
-				file.delete();
-
-				//TODO: u best delete this shit	
-				//TODO: tell people if file does not exist
-				System.out.println("deleted");
+				Java_delete(currentDirectory,command.get(1));
 			}
 			else if (command.size()==2&&command.get(0).equalsIgnoreCase("display")){
-				String fileName =  command.get(1);
-				File file = new File(currentDirectory, fileName);
-				FileReader fileReader = new FileReader(file);
-				BufferedReader in = new BufferedReader(fileReader);
-				String line;
-				while((line = in.readLine())!=null){
-					System.out.println(line);
-				}
-				in.close();
-
-				//TODO: u best delete this shit	
-				System.out.println("\n"+"displayed");
+				Java_cat(currentDirectory,command.get(1));
 			}
 			
 			else if (command.size()==1&&command.get(0).equalsIgnoreCase("list")){
-				File[] fileList = currentDirectory.listFiles();
-				for (File file : fileList){
-					System.out.println(file.getName());
-				}
+				Java_ls(currentDirectory, null, null);
 			}
 			else if (command.size()==2&&command.get(0).equalsIgnoreCase("list")&&command.get(1).equalsIgnoreCase("property")){
-				File[] fileList = currentDirectory.listFiles();
-				//***********TODO: sort by property!!!!!!!!!***************//
-				for (File file : fileList){
-					System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+new Date(file.lastModified()));
-				}
+				Java_ls(currentDirectory, "property", null);
+			}else if (command.size()==3&&command.get(0).equalsIgnoreCase("list")&&command.get(1).equalsIgnoreCase("property")){
+				Java_ls(currentDirectory, "property", command.get(2));
 			}
 			else if (command.size()==2&&command.get(0).equalsIgnoreCase("find")){
-				String substring = command.get(1);
-				File[] fileList = currentDirectory.listFiles();
-				//******check sub directories for file**********//
-				//*****recursive????****//
-				for (File file : fileList){
-					String filePath = file.getAbsolutePath();
-					if (filePath.toLowerCase().contains(substring.toLowerCase())&&!file.isDirectory()){
-						System.out.println(filePath);
+				fileFoundList = new ArrayList<File>();
+				boolean empty = Java_find(currentDirectory, command.get(1));
+				if (!empty){
+					System.out.println("The directory "+currentDirectory.getAbsolutePath()+" is emty.");
+				}else{
+					if (fileFoundList.size()==0){
+						System.out.println("No files containing '"+command.get(1)+"' found");
 					}
-
+					else{
+						for (File file:fileFoundList){
+							System.out.println(file.getAbsolutePath());
+						}
+					}
+					fileFoundList.clear();	
+				}						
+			}else if(command.size()==3&&command.get(0).equalsIgnoreCase("tree")){
+				try{
+					int depth = Integer.parseInt(command.get(1));
+					String sort = command.get(2);
+					Java_tree(currentDirectory,depth,sort);
+				}catch(Exception e){
+					System.out.println(command.get(1)+" is not a valid integer");
+					System.out.println(e);
 				}
+
+			}else if(command.size()==2&&command.get(0).equalsIgnoreCase("tree")){
+				try{
+					int depth = Integer.parseInt(command.get(1));
+					Java_tree(currentDirectory,depth,null);
+				}catch(Exception e){
+					System.out.println(command.get(1)+" is not a valid integer");
+					System.out.println(e);
+				}
+			}else if(command.size()==1&&command.get(0).equalsIgnoreCase("tree")){
+				Java_tree(currentDirectory,Integer.MAX_VALUE,null);
 			}
 			else{
-				System.out.println("test");
+				System.out.println("command not handled");
 
 			// TODO: implement code to handle list here
 			
@@ -146,7 +145,14 @@ public class FileOperation {
 	 * @param command - name of the file to be created
 	 */
 	public static void Java_create(File dir, String name) {
-		// TODO: create a file
+		File file = new File(dir, name);
+		try{
+			file.createNewFile();	
+		}catch(Exception e){
+			System.out.println(e);
+
+		}
+		
 	}
 
 	/**
@@ -155,7 +161,8 @@ public class FileOperation {
 	 * @param name - name of the file to be deleted
 	 */
 	public static void Java_delete(File dir, String name) {
-		// TODO: delete a file
+		File file = new File(dir, name);
+		file.delete();
 	}
 
 	/**
@@ -164,7 +171,19 @@ public class FileOperation {
 	 * @param name - name of the file to be displayed
 	 */
 	public static void Java_cat(File dir, String name) {
-		// TODO: display a file
+		File file = new File(dir, name);
+		try{
+			FileReader fileReader = new FileReader(file);
+			BufferedReader in = new BufferedReader(fileReader);
+			String line;
+			while((line = in.readLine())!=null){
+				System.out.println(line);
+			}
+			in.close();
+		}catch(Exception e){
+			System.out.println(e);
+		}
+		
 	}
 
 	/**
@@ -176,14 +195,15 @@ public class FileOperation {
 	private static File[] sortFileList(File[] list, String sort_method) {
 		// sort the file list based on sort_method
 		// if sort based on name
-		if (sort_method.equalsIgnoreCase("name")) {
+		if (sort_method==null){
+			return list;
+		}else if (sort_method.equalsIgnoreCase("name")) {
 			Arrays.sort(list, new Comparator<File>() {
 				public int compare(File f1, File f2) {
 					return (f1.getName()).compareTo(f2.getName());
 				}
 			});
-		}
-		else if (sort_method.equalsIgnoreCase("size")) {
+		}else if (sort_method.equalsIgnoreCase("size")) {
 			Arrays.sort(list, new Comparator<File>() {
 				public int compare(File f1, File f2) {
 					return Long.valueOf(f1.length()).compareTo(f2.length());
@@ -196,7 +216,11 @@ public class FileOperation {
 					return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
 				}
 			});
+		}else if (sort_method==null){
+			
 		}
+		System.out.println("ERROR: invalid sort method.");
+		System.out.println("sort methods are: name, size, time");
 		return list;
 	}
 
@@ -208,6 +232,34 @@ public class FileOperation {
 	 */
 	public static void Java_ls(File dir, String display_method, String sort_method) {
 		// TODO: list files
+		File[] fileList = dir.listFiles();
+		File[] fileSorted = null;
+		if (display_method==null){
+			for (File file: fileList){
+				System.out.println(file.getName());
+			}
+		} else if(display_method.equalsIgnoreCase("property") && sort_method==null){
+			for (File file : fileList){
+				System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+new Date(file.lastModified()));
+			}
+		}else if(display_method.equalsIgnoreCase("property") && sort_method.equalsIgnoreCase("name")){
+			fileSorted = sortFileList(fileList,"name");
+			for (File file : fileSorted){
+				System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+new Date(file.lastModified()));
+			}
+		}else if(display_method.equalsIgnoreCase("property") && sort_method.equalsIgnoreCase("size")){
+			fileSorted = sortFileList(fileList,"size");
+			for (File file : fileSorted){
+				System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+new Date(file.lastModified()));
+			}
+		}else if(display_method.equalsIgnoreCase("property") && sort_method.equalsIgnoreCase("time")){
+			fileSorted = sortFileList(fileList,"time");
+			for (File file : fileSorted){
+				System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+new Date(file.lastModified()));
+			}
+		}else{
+			System.out.println("ERROR: invalid display command");
+		}
 	}
 
 	/**
@@ -218,8 +270,32 @@ public class FileOperation {
 	 */
 	public static boolean Java_find(File dir, String name) {
 		boolean flag = false;
-		
+
+		if (dir.listFiles().length==0){
+			flag = false;
+		}else{
+			File[] fileList = dir.listFiles();
+			//initiatie DFS
+			for (File file : fileList){
+				DFS(file, name);
+			}
+			flag = true;
+		}
 		return flag;
+	}
+
+	public static void DFS(File dir, String substring){
+		if (dir.isDirectory()&&dir.listFiles().length>0){
+			for (File file:dir.listFiles()){
+				//recurse if it is a non-empty directory, so we can search the subdirectories
+				DFS(file,substring);
+			}
+		}else if (!dir.isDirectory()&&dir.getAbsolutePath().toLowerCase().contains(substring.toLowerCase())){
+			//if the file not directory and contains text
+			fileFoundList.add(dir);
+		}else{
+			//do nothing
+		}
 	}
 
 	/**
@@ -228,10 +304,40 @@ public class FileOperation {
 	 * @param depth - maximum sub-level file to be displayed
 	 * @param sort_method - control the sort type
 	 */
-	public static void Java_tree(File dir, int depth, String sort_method) {
-		// TODO: print file tree
+	public static void Java_tree(File dir, int depth, String sort_method) {		
+		File[] fileSorted = sortFileList(dir.listFiles(),sort_method);
+		//initialise tree DFS
+		for (File file: fileSorted){
+			System.out.println(file.getName());
+			if (file.isDirectory()&&file.listFiles().length>0){
+				tree_DFS(file, depth, sort_method, 0);
+			}
+		}
 	}
 
-	// TODO: define other functions if necessary for the above functions
+	//DFS in each individual directory
+	public static void tree_DFS(File dir, int depth, String sort_method, int check) {
+		String addOn="";
+		//front stuff for recursion
+		
+		for (int i=0;i<check;i++){
+			addOn+="	";
+		}
+		if (check>0){
+			addOn+="|-";
+		}
+		if (check<depth&&check>0){
+			System.out.println(addOn+dir.getName());
+		}
+		//recursing for subdirectories
+		if (dir.isDirectory()&&dir.listFiles().length>0){
+			File[] sortedFile = sortFileList(dir.listFiles(),sort_method);
+			for (File file:sortedFile){
+				tree_DFS(file,depth,sort_method,check+1);				
+			}
+		}
 
+
+		
+	}
 }
