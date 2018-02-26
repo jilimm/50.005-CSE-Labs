@@ -216,11 +216,13 @@ public class FileOperation {
 					return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
 				}
 			});
-		}else if (sort_method==null){
-			
 		}
-		System.out.println("ERROR: invalid sort method.");
-		System.out.println("sort methods are: name, size, time");
+		else{
+			System.out.println("ERROR: invalid sort method.");
+			System.out.println("sort methods are: name, size, time");
+			return list;
+		}
+		
 		return list;
 	}
 
@@ -240,7 +242,7 @@ public class FileOperation {
 			}
 		} else if(display_method.equalsIgnoreCase("property") && sort_method==null){
 			for (File file : fileList){
-				System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+new Date(file.lastModified()));
+				System.out.println(file.getName()+"	"+"Size: "+file.length()+"	"+"Last Modified:"+new Date(file.lastModified()));
 			}
 		}else if(display_method.equalsIgnoreCase("property") && sort_method.equalsIgnoreCase("name")){
 			fileSorted = sortFileList(fileList,"name");
